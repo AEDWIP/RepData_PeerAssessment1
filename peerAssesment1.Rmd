@@ -6,7 +6,9 @@ output:
   html_document:
     keep_md: true
 ---
-
+```{r set up} 
+options(scipen=999)
+```
 
 ## Loading and preprocessing the data
 The github repo we forked from contains the data file activity.zip. 
@@ -46,19 +48,31 @@ convert all NA fields into zeros
 data[is.na(data)] <- 0
 ```
 
-## What is mean total number of steps taken per day?
-First we need to check that the data is ordered by date
+Check that the data is ordered by date
 ```{r}
 is.unsorted(data$date)
 ```
+## What is mean total number of steps taken per day?
 
 count the number of steps taken each date
 ```{r}
 stepsPerDay <- aggregate(steps ~ date, data=data, FUN=sum)
-averageStepsPerDay <- round(mean(stepsPerDay$steps), digits=2)
 ```
 
-The mean number of steps taken each day is `r averageStepsPerDay`
+
+Create a historgram of the total number of steps taken each day
+```{r}
+library(ggplot2)
+qplot(stepsPerDay$steps, geom="histogram") 
+```
+
+Calculate the mean and median number of steps per day 
+```{r}
+averageStepsPerDay <- round(mean(stepsPerDay$steps), digits=2)
+medianStepsPerDay <- median(stepsPerDay$steps)
+```
+The mean number of steps taken each day is `r averageStepsPerDay`.
+The median number of steps taken each day is `r medianStepsPerDay`
 
 
 ## What is the average daily activity pattern?
