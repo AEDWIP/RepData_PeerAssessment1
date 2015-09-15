@@ -9,11 +9,56 @@ output:
 
 
 ## Loading and preprocessing the data
+The github repo we forked from contains the data file activity.zip. 
+The following code will automatically unzip the data file into a subdirectory
+if needed. In general to save space we do not want to store the unzipped version 
+of the data in git.
 
 
+```{r}
+dataDir <- "./data/"
+dataFile <- sprintf("%s%s", dataDir, "activity.csv")
+if (!file.exists(dataDir)) { dir.create(dataDir)}
+if (!file.exists(dataFile)) {
+  unzip("activity.zip", exdir=dataDir)
+  dateDownLoaded <- date()
+  write(dateDownLoaded, file=sprintf("%s%s", dataDir, "dateDownLoaded.txt"))
+}
+```
+
+Next we nned to load the csv file into R. By default read.csv treats the data column as string
+factors. We use as.Date() to convert factors to type date
+```{r}
+data <- read.csv(dataFile, header=TRUE)
+data[[2]] <- as.Date(data[[2]])
+```
+
+Check to see if any of the fields are missing
+```{r}
+sum(is.na(data$steps))
+sum(is.na(data$date))
+sum(is.na(data$interval))
+```
+
+We need to clean up the data a little. Many samples are missing data. We'll 
+convert all NA fields into zeros
+```{r}
+data[is.na(data)] <- 0
+```
 
 ## What is mean total number of steps taken per day?
+First we need to check that the data is ordered by date
+```{r}
+is.unsorted(data$date)
+```
 
+count the number of steps taken each date
+```{r}
+stepsPerDay <- aggregate(steps ~ date, data=data, FUN=sum)
+averageStepsPerDay <- round(mean(stepsPerDay$steps), digits=2)
+```
+
+The mean number of steps taken each day is `r averageStepsPerDay`
 
 
 ## What is the average daily activity pattern?
