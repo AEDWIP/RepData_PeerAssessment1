@@ -6,9 +6,18 @@ output:
   html_document:
     keep_md: true
 ---
-```{r set up} 
+```{r setup, echo=FALSE} 
 options(scipen=999)
 ```
+
+## The data
+The variables included in this dataset are:
+
+steps: Number of steps taking in a 5-minute interval (missing values are coded as NA)
+
+date: The date on which the measurement was taken in YYYY-MM-DD format
+
+interval: Identifier for the 5-minute interval in which measurement was taken
 
 ## Loading and preprocessing the data
 The github repo we forked from contains the data file activity.zip. 
@@ -28,30 +37,38 @@ if (!file.exists(dataFile)) {
 }
 ```
 
-Next we nned to load the csv file into R. By default read.csv treats the data column as string
+Next we need to load the csv file into R. By default read.csv treats the data column as string
 factors. We use as.Date() to convert factors to type date
 ```{r}
 data <- read.csv(dataFile, header=TRUE)
 data[[2]] <- as.Date(data[[2]])
 ```
 
-Check to see if any of the fields are missing
+Check to see if any of the fields are missing (For this part of the assignment we can ignore the missing values in the dataset.
+)
 ```{r}
 sum(is.na(data$steps))
 sum(is.na(data$date))
 sum(is.na(data$interval))
 ```
 
-We need to clean up the data a little. Many samples are missing data. We'll 
-convert all NA fields into zeros
-```{r}
-data[is.na(data)] <- 0
-```
-
 Check that the data is ordered by date
 ```{r}
 is.unsorted(data$date)
 ```
+
+Explore the interval data
+```{r}
+numIntervalsInDay <- (24 * 60) / 5
+numUniqueIntervalsInData <- length(unique(data$interval))
+rangeOfInterval <- range(data$interval)
+```
+there are `r numIntervalsInDay` 5 min. intervals in any gvien day. Our data
+contains `r numUniqueIntervalsInData` differnt intervals. The range of interval
+value is `r rangeOfInterval`. By visually inspecting the interval values I think
+the values are actually some sort of time stamp. I.E. 2355 is military time for 
+11:55 pm. We should be able to treat the interval data like a factor
+
 ## What is mean total number of steps taken per day?
 
 count the number of steps taken each date
@@ -77,10 +94,59 @@ The median number of steps taken each day is `r medianStepsPerDay`
 
 ## What is the average daily activity pattern?
 
+```{r}
+averageStepsByInterval <- aggregate(steps ~ interval, data=data, FUN=mean)
+p <- ggplot(data=averageStepsByInterval, aes(x=interval, y=steps, group=1))
+p + geom_line()
+```
 
+Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+```{r}
+m <- max(averageStepsByInterval$steps)
+r <- averageStepsByInterval[averageStepsByInterval$steps==m,]
+intervalWithMostNumSteps <- r$interval
+```
+The interval with the most number of steps is `r intervalWithMostNumSteps`
 
 ## Imputing missing values
+1. Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
+```{r}
+numMissingSteps <- sum(is.na(data$steps))
+numMissingDates <- sum(is.na(data$date))
+numMissingInterval <- sum(is.na(data$interval))
+#data[is.na(data)] <- 0
+```
+The number of rows missing step data is `r numMissingSteps`
 
+The number of rows missing date data is `r numMissingDates`
+
+The number of rows missing interval data is `r numMissingInterval`
+
+2. Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
+
+My stratey is to loop over all rows in the data frame. If the number of steps
+is NA, assign the average number of steps for that interval
+```{r fixNA}
+fixedData <- read.csv(dataFile, header=TRUE)
+fixedData[[2]] <- as.Date(fixedData[[2]])
+n <- nrow(data)
+for (i in 1:n) {
+    if (is.na(fixedData[i,1])) {
+        interval <- fixedData[i,3]
+        x <- averageStepsByInterval[averageStepsByInterval$interval == interval,]$steps
+        # we want to round, steps are ints not reals
+        r <- round(x)
+        fixedData[i,1] <- r
+        #cat('interval:', interval, " x:", x, " r:", r, " new:", fixedData[i,1], "\n")
+    }
+}
+
+sum(is.na(fixedData$steps))
+sum(is.na(fixedData$date))
+sum(is.na(fixedData$interval))
+```
+
+# AEDWIP
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
