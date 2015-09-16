@@ -97,7 +97,7 @@ The median number of steps taken each day is `r medianStepsPerDay`
 ```{r}
 averageStepsByInterval <- aggregate(steps ~ interval, data=data, FUN=mean)
 p <- ggplot(data=averageStepsByInterval, aes(x=interval, y=steps, group=1))
-p + geom_line()
+p + geom_line() + ggtitle("average daily activity pattern")
 ```
 
 Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
@@ -122,10 +122,15 @@ The number of rows missing date data is `r numMissingDates`
 
 The number of rows missing interval data is `r numMissingInterval`
 
-2. Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
+2. Devise a strategy for filling in all of the missing values in the dataset. 
+The strategy does not need to be sophisticated. For example, you could use the 
+mean/median for that day, or the mean for that 5-minute interval, etc.
 
 My stratey is to loop over all rows in the data frame. If the number of steps
 is NA, assign the average number of steps for that interval
+
+3. Create a new dataset that is equal to the original dataset but with the 
+missing data filled in.
 ```{r fixNA}
 fixedData <- read.csv(dataFile, header=TRUE)
 fixedData[[2]] <- as.Date(fixedData[[2]])
@@ -146,7 +151,73 @@ sum(is.na(fixedData$date))
 sum(is.na(fixedData$interval))
 ```
 
-# AEDWIP
+4. Make a histogram of the total number of steps taken each day and Calculate 
+and report the mean and median total number of steps taken per day. Do these 
+values differ from the estimates from the first part of the assignment? 
+What is the impact of imputing missing data on the estimates of the total daily 
+number of steps?
 
+```{r}
+stepsPerDay2 <- aggregate(steps ~ date, data=fixedData, FUN=sum)
+```
+
+
+Create a historgram of the total number of steps taken each day
+```{r}
+library(ggplot2)
+qplot(stepsPerDay2$steps, geom="histogram") 
+```
+
+Calculate the mean and median number of steps per day 
+```{r}
+averageStepsPerDay2 <- round(mean(stepsPerDay2$steps), digits=2)
+medianStepsPerDay2 <- median(stepsPerDay2$steps)
+```
+The original mean number of steps taken each day is `r averageStepsPerDay`.
+The orginal median number of steps taken each day is `r medianStepsPerDay`
+
+After replacing missing step data with the average number of steps for the 
+interval
+
+The original mean number of steps taken each day is `r averageStepsPerDay2`.
+The orginal median number of steps taken each day is `r medianStepsPerDay2`
+
+So fixing the data had a small over all effect.
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+1. Create a new factor variable in the dataset with two levels – “weekday” and 
+“weekend” indicating whether a given date is a weekday or weekend day.
+
+
+```{r}
+w <- weekdays(fixedData$date) 
+weekEnds <- w == "Saturday" | w == "Sunday"
+#weekDays <- !weekEnds
+dayType <- ifelse(weekEnds, "weekEnd", "weekDay")
+fixedData$dayType <- as.factor(dayType)
+```
+
+2. Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
+
+```{r}
+weekDayData <- fixedData[fixedData$dayType == "weekDay",]
+averageStepsByIntervalWeekDay <- aggregate(steps ~ interval, data=weekDayData, FUN=mean)
+p1 <- ggplot(data=averageStepsByIntervalWeekDay, aes(x=interval, y=steps, group=1)) 
+p1 <- p1 + geom_line() + ggtitle("weekday")
+
+weekEndData <- fixedData[fixedData$dayType == "weekEnd",]
+averageStepsByIntervalWeekEnd <- aggregate(steps ~ interval, data=weekEndData, FUN=mean)
+p2 <- ggplot(data=averageStepsByIntervalWeekEnd, aes(x=interval, y=steps, group=1))
+p2 <- p2 + geom_line() + ggtitle("weekend")
+
+library(grid)
+pushViewport(viewport(layout = grid.layout(2, 1)))
+print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
+print(p2, vp = viewport(layout.pos.row = 2, layout.pos.col = 1))
+```
+
+
+averageStepsByInterval <- aggregate(steps ~ interval, data=data, FUN=mean)
+p <- ggplot(data=averageStepsByInterval, aes(x=interval, y=steps, group=1))
+p + geom_line() + ggtitle("average daily activity pattern")
