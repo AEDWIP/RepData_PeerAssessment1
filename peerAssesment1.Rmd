@@ -20,6 +20,8 @@ date: The date on which the measurement was taken in YYYY-MM-DD format
 interval: Identifier for the 5-minute interval in which measurement was taken
 
 ## Loading and preprocessing the data
+1. Load the data (i.e. read.csv())
+
 The github repo we forked from contains the data file activity.zip. 
 The following code will automatically unzip the data file into a subdirectory
 if needed. In general to save space we do not want to store the unzipped version 
@@ -35,12 +37,14 @@ if (!file.exists(dataFile)) {
   dateDownLoaded <- date()
   write(dateDownLoaded, file=sprintf("%s%s", dataDir, "dateDownLoaded.txt"))
 }
+data <- read.csv(dataFile, header=TRUE)
 ```
 
-Next we need to load the csv file into R. By default read.csv treats the data column as string
+2. Process/transform the data (if necessary) into a format suitable for your analysis
+
+By default read.csv treats the data column as string
 factors. We use as.Date() to convert factors to type date
 ```{r}
-data <- read.csv(dataFile, header=TRUE)
 data[[2]] <- as.Date(data[[2]])
 ```
 
@@ -71,19 +75,14 @@ the values are actually some sort of time stamp. I.E. 2355 is military time for
 
 ## What is mean total number of steps taken per day?
 
-count the number of steps taken each date
+1. Make a histogram of the total number of steps taken each day
 ```{r}
 stepsPerDay <- aggregate(steps ~ date, data=data, FUN=sum)
-```
-
-
-Create a historgram of the total number of steps taken each day
-```{r}
 library(ggplot2)
-qplot(stepsPerDay$steps, geom="histogram") 
+qplot(stepsPerDay$steps, geom="histogram") + ggtitle("Steps taken per day")
 ```
 
-Calculate the mean and median number of steps per day 
+2. Calculate the mean and median number of steps per day ps taken each date
 ```{r}
 averageStepsPerDay <- round(mean(stepsPerDay$steps), digits=2)
 medianStepsPerDay <- median(stepsPerDay$steps)
@@ -94,13 +93,14 @@ The median number of steps taken each day is `r medianStepsPerDay`
 
 ## What is the average daily activity pattern?
 
+1. Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
 ```{r}
 averageStepsByInterval <- aggregate(steps ~ interval, data=data, FUN=mean)
 p <- ggplot(data=averageStepsByInterval, aes(x=interval, y=steps, group=1))
 p + geom_line() + ggtitle("average daily activity pattern")
 ```
 
-Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
 ```{r}
 m <- max(averageStepsByInterval$steps)
 r <- averageStepsByInterval[averageStepsByInterval$steps==m,]
@@ -159,17 +159,10 @@ number of steps?
 
 ```{r}
 stepsPerDay2 <- aggregate(steps ~ date, data=fixedData, FUN=sum)
-```
 
-
-Create a historgram of the total number of steps taken each day
-```{r}
 library(ggplot2)
-qplot(stepsPerDay2$steps, geom="histogram") 
-```
+qplot(stepsPerDay2$steps, geom="histogram") + ggtitle("Steps per day")
 
-Calculate the mean and median number of steps per day 
-```{r}
 averageStepsPerDay2 <- round(mean(stepsPerDay2$steps), digits=2)
 medianStepsPerDay2 <- median(stepsPerDay2$steps)
 ```
@@ -179,8 +172,8 @@ The orginal median number of steps taken each day is `r medianStepsPerDay`
 After replacing missing step data with the average number of steps for the 
 interval
 
-The original mean number of steps taken each day is `r averageStepsPerDay2`.
-The orginal median number of steps taken each day is `r medianStepsPerDay2`
+The mean number of steps taken each day is `r averageStepsPerDay2`.
+The median number of steps taken each day is `r medianStepsPerDay2`
 
 So fixing the data had a small over all effect.
 
@@ -216,8 +209,5 @@ pushViewport(viewport(layout = grid.layout(2, 1)))
 print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
 print(p2, vp = viewport(layout.pos.row = 2, layout.pos.col = 1))
 ```
-
-
-averageStepsByInterval <- aggregate(steps ~ interval, data=data, FUN=mean)
-p <- ggplot(data=averageStepsByInterval, aes(x=interval, y=steps, group=1))
-p + geom_line() + ggtitle("average daily activity pattern")
+Yes the activity levels appear to be different. It looks like the subjects are
+more active durring the weekend.
