@@ -28,7 +28,7 @@ if needed. In general to save space we do not want to store the unzipped version
 of the data in git.
 
 
-```{r}
+```{r readData}
 dataDir <- "./data/"
 dataFile <- sprintf("%s%s", dataDir, "activity.csv")
 if (!file.exists(dataDir)) { dir.create(dataDir)}
@@ -44,25 +44,21 @@ data <- read.csv(dataFile, header=TRUE)
 
 By default read.csv treats the data column as string
 factors. We use as.Date() to convert factors to type date
-```{r}
+```{r preProcess data}
 data[[2]] <- as.Date(data[[2]])
 ```
 
-Check to see if any of the fields are missing (For this part of the assignment we can ignore the missing values in the dataset.
+Check to see if any of the fields are missing (For this part of the assignment we can ignore the missing values in the dataset. Also check if data is ordered by date
 )
-```{r}
+```{r exploreData}
 sum(is.na(data$steps))
 sum(is.na(data$date))
 sum(is.na(data$interval))
-```
-
-Check that the data is ordered by date
-```{r}
 is.unsorted(data$date)
 ```
 
 Explore the interval data
-```{r}
+```{r explore data understanding intervals}
 numIntervalsInDay <- (24 * 60) / 5
 numUniqueIntervalsInData <- length(unique(data$interval))
 rangeOfInterval <- range(data$interval)
@@ -76,14 +72,14 @@ the values are actually some sort of time stamp. I.E. 2355 is military time for
 ## What is mean total number of steps taken per day?
 
 1. Make a histogram of the total number of steps taken each day
-```{r}
+```{r total number of steps taken histogram}
 stepsPerDay <- aggregate(steps ~ date, data=data, FUN=sum)
 library(ggplot2)
 qplot(stepsPerDay$steps, geom="histogram") + ggtitle("Steps taken per day")
 ```
 
 2. Calculate the mean and median number of steps per day ps taken each date
-```{r}
+```{r calcuate average number of steps}
 averageStepsPerDay <- round(mean(stepsPerDay$steps), digits=2)
 medianStepsPerDay <- median(stepsPerDay$steps)
 ```
@@ -94,14 +90,14 @@ The median number of steps taken each day is `r medianStepsPerDay`
 ## What is the average daily activity pattern?
 
 1. Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
-```{r}
+```{r activity plot}
 averageStepsByInterval <- aggregate(steps ~ interval, data=data, FUN=mean)
 p <- ggplot(data=averageStepsByInterval, aes(x=interval, y=steps, group=1))
 p + geom_line() + ggtitle("average daily activity pattern")
 ```
 
 2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
-```{r}
+```{r find average number of steps}
 m <- max(averageStepsByInterval$steps)
 r <- averageStepsByInterval[averageStepsByInterval$steps==m,]
 intervalWithMostNumSteps <- r$interval
@@ -110,7 +106,7 @@ The interval with the most number of steps is `r intervalWithMostNumSteps`
 
 ## Imputing missing values
 1. Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
-```{r}
+```{r fix missing data}
 numMissingSteps <- sum(is.na(data$steps))
 numMissingDates <- sum(is.na(data$date))
 numMissingInterval <- sum(is.na(data$interval))
@@ -157,7 +153,7 @@ values differ from the estimates from the first part of the assignment?
 What is the impact of imputing missing data on the estimates of the total daily 
 number of steps?
 
-```{r}
+```{r histogram and summary}
 stepsPerDay2 <- aggregate(steps ~ date, data=fixedData, FUN=sum)
 
 library(ggplot2)
@@ -183,7 +179,7 @@ So fixing the data had a small over all effect.
 “weekend” indicating whether a given date is a weekday or weekend day.
 
 
-```{r}
+```{r create weekday factor}
 w <- weekdays(fixedData$date) 
 weekEnds <- w == "Saturday" | w == "Sunday"
 #weekDays <- !weekEnds
@@ -193,7 +189,7 @@ fixedData$dayType <- as.factor(dayType)
 
 2. Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
 
-```{r}
+```{r graph weekday and weekend activity}
 weekDayData <- fixedData[fixedData$dayType == "weekDay",]
 averageStepsByIntervalWeekDay <- aggregate(steps ~ interval, data=weekDayData, FUN=mean)
 p1 <- ggplot(data=averageStepsByIntervalWeekDay, aes(x=interval, y=steps, group=1)) 
